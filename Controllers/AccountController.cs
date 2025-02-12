@@ -19,22 +19,23 @@ namespace API.Controllers
 
             if(await UserExists(registerDTO.Username)) return BadRequest("User already exists");
 
-            using var hmac = new HMACSHA512();
+            return Ok();
+            // using var hmac = new HMACSHA512();
 
-            var user = new AppUser 
-            {
-                UserName = registerDTO.Username.ToLower(),
-                PasswordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(registerDTO.Password)),
-                PasswordSalt = hmac.Key
-            };
+            // var user = new AppUser 
+            // {
+            //     UserName = registerDTO.Username.ToLower(),
+            //     PasswordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(registerDTO.Password)),
+            //     PasswordSalt = hmac.Key
+            // };
             
-            context.Users.Add(user);
-            await context.SaveChangesAsync();
+            // context.Users.Add(user);
+            // await context.SaveChangesAsync();
             
-            return new UserDTO{
-                USerName = user.UserName,
-                Token = tokenService.CreateToken(user)
-            };
+            // return new UserDTO{
+            //     USerName = user.UserName,
+            //     Token = tokenService.CreateToken(user)
+            // };
         }
 
         [HttpPost("login")]
@@ -42,7 +43,7 @@ namespace API.Controllers
 
             var user = await context.Users.FirstOrDefaultAsync(x => x.UserName == loginDTO.Username.ToLower());
 
-            if(user == null) return Unauthorized("Invalid UserName");
+            if(user == null) return Unauthorized("Invalid Username");
 
             using var hmac = new HMACSHA512(user.PasswordSalt);
 
@@ -50,12 +51,11 @@ namespace API.Controllers
 
             for(var i = 0; i < computedHash.Length; i++){
 
-                if(computedHash[i] != loginDTO.Password[i]) return Unauthorized("Invalid PassWord");
-
+                if(computedHash[i] != user.PasswordHash[i]) return Unauthorized("Invalid Password");
             }
 
             return new UserDTO{
-                USerName = user.UserName,
+                UserName = user.UserName,
                 Token = tokenService.CreateToken(user)
             };
         }
